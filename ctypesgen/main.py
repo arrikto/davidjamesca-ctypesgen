@@ -309,6 +309,13 @@ def main(givenargs=None):
     )
     op.add_option(
         "",
+        "--use-errno",
+        dest="use_errno",
+        default=False,
+        action="store_true"
+    )
+    op.add_option(
+        "",
         "--output-language",
         dest="output_language",
         metavar="LANGUAGE",

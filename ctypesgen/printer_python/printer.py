@@ -203,7 +203,8 @@ class WrapperPrinter:
         self.file.write("\n")
 
     def print_library(self, library):
-        self.file.write('_libs["%s"] = load_library("%s")\n' % (library, library))
+        self.file.write('_libs["%s"] = load_library("%s", %s)\n'
+                        % (library, library, self.options.use_errno))
 
     def print_module(self, module):
         self.file.write("from %s import *\n" % module)
