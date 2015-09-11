@@ -68,9 +68,10 @@ class LibraryLoader:
 
         mode = ctypes.DEFAULT_MODE
 
-        def __init__(self, path):
+        def __init__(self, path, use_errno):
             super(LibraryLoader.Lookup, self).__init__()
-            self.access = dict(cdecl=ctypes.CDLL(path, self.mode))
+            self.access = dict(cdecl=ctypes.CDLL(path, self.mode,
+                                                 use_errno=use_errno))
 
         def get(self, name, calling_convention="cdecl"):
             """Return the given name according to the selected calling convention"""
@@ -94,14 +95,14 @@ class LibraryLoader:
     def __init__(self):
         self.other_dirs = []
 
-    def __call__(self, libname):
+    def __call__(self, libname, use_errno=False):
         """Given the name of a library, load it."""
         paths = self.getpaths(libname)
 
         for path in paths:
             # noinspection PyBroadException
             try:
-                return self.Lookup(path)
+                return self.Lookup(path, use_errno)
             except:
                 pass
 
@@ -396,7 +397,7 @@ class WindowsLibraryLoader(LibraryLoader):
     name_formats = ["%s.dll", "lib%s.dll", "%slib.dll", "%s"]
 
     class Lookup(LibraryLoader.Lookup):
-        def __init__(self, path):
+        def __init__(self, path, use_errno):
             super(WindowsLibraryLoader.Lookup, self).__init__(path)
             self.access["stdcall"] = ctypes.windll.LoadLibrary(path)
 
