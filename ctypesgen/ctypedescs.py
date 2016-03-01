@@ -256,7 +256,8 @@ class CtypesPointerCast(object):
 
 
 class CtypesFunction(CtypesType):
-    def __init__(self, restype, parameters, variadic, attrib=dict()):
+    def __init__(self, restype, parameters, variadic, use_errno=False,
+                 attrib=dict()):
         super(CtypesFunction, self).__init__()
         self.restype = restype
         self.errcheck = CtypesNoErrorCheck()
@@ -284,6 +285,7 @@ class CtypesFunction(CtypesType):
         self.argtypes = [remove_function_pointer(p) for p in parameters]
         self.variadic = variadic
         self.attrib = attrib
+        self.use_errno = use_errno
 
     def visit(self, visitor):
         self.restype.visit(visitor)
@@ -291,12 +293,11 @@ class CtypesFunction(CtypesType):
             a.visit(visitor)
         super(CtypesFunction, self).visit(visitor)
 
-    def py_string(self, ignore_can_be_ctype=None):
-        return "CFUNCTYPE(UNCHECKED(%s), %s)" % (
-            self.restype.py_string(),
-            ", ".join([a.py_string() for a in self.argtypes]),
-        )
-
+    def py_string(self):
+        argtypes = ", ".join([a.py_string() for a in self.argtypes])
+        args = ["UNCHECKED(%s)" % self.restype.py_string(), argtypes,
+                "use_errno=%s" % str(self.use_errno)]
+        return "CFUNCTYPE(%s)" % ",".join([a for a in args if a])
 
 last_tagnum = 0
 

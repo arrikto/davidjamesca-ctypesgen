@@ -86,6 +86,7 @@ class CtypesParser(CParser):
         self.type_map = ctypes_type_map
         if not options.no_python_types:
             self.type_map.update(ctypes_type_map_python_builtin)
+        self.use_errno = options.use_errno
 
     def make_struct_from_specifier(self, specifier):
         variety = {True: "union", False: "struct"}[specifier.is_union]
@@ -171,7 +172,7 @@ class CtypesParser(CParser):
                     ct = self.get_ctypes_type(param.type, param.declarator)
                     ct.identifier = param_name
                     params.append(ct)
-                t = CtypesFunction(t, params, variadic)
+                t = CtypesFunction(t, params, variadic, self.use_errno)
 
             a = declarator.array
             while a:
@@ -195,7 +196,8 @@ class CtypesParser(CParser):
                 ct = self.get_ctypes_type(param.type, param.declarator)
                 ct.identifier = param_name
                 params.append(ct)
-            t = CtypesFunction(t, params, variadic, declarator.attrib)
+            t = CtypesFunction(t, params, variadic, self.use_errno,
+                               declarator.attrib)
 
         if declarator:
             a = declarator.array
