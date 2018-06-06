@@ -26,13 +26,19 @@ def automatically_typedef_structs(data, options):
     # XXX Check if it has already been aliased in the C code.
 
     for struct in data.structs:
-        if not struct.ctype.anonymous:  # Don't alias anonymous structs
-            typedef = TypedefDescription(struct.tag, struct.ctype, src=struct.src)
-            typedef.add_requirements(set([struct]))
+        if struct.ctype.anonymous:
+            # Don't alias anonymous structs
+            continue
+        if any(f.name == struct.tag for f in data.functions):
+            # Do not alias if a function with the same name exists
+            continue
 
-            data.typedefs.append(typedef)
-            data.all.insert(data.all.index(struct) + 1, typedef)
-            data.output_order.append(("typedef", typedef))
+        typedef = TypedefDescription(struct.tag, struct.ctype, src=struct.src)
+        typedef.add_requirements(set([struct]))
+
+        data.typedefs.append(typedef)
+        data.all.insert(data.all.index(struct) + 1, typedef)
+        data.output_order.append(("typedef", typedef))
 
 
 def remove_NULL(data, options):
