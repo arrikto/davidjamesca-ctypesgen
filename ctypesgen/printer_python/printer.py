@@ -188,7 +188,6 @@ class WrapperPrinter:
 
     def print_loader(self):
         self.file.write("_libs = {}\n")
-        self.file.write("_libdirs = %s\n\n" % self.options.compile_libdirs)
         self.file.write("# Begin loader\n\n")
         if self.options.embed_preamble:
             with open(LIBRARYLOADER_PATH, "r") as loader_file:
