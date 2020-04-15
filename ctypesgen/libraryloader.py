@@ -41,6 +41,7 @@ import glob
 import os.path
 import platform
 import re
+import subprocess
 import sys
 
 
@@ -67,6 +68,7 @@ class LibraryLoader:
 
         def __init__(self, path, use_errno):
             super(LibraryLoader.Lookup, self).__init__()
+            self.path = path
             self.access = dict(cdecl=ctypes.CDLL(path, self.mode,
                                                  use_errno=use_errno))
 
@@ -85,6 +87,9 @@ class LibraryLoader:
             if calling_convention not in self.access:
                 return False
             return hasattr(self.access[calling_convention], name)
+
+        def runtime_lib(self, libname):
+            return libname
 
         def __getattr__(self, name):
             return getattr(self.access["cdecl"], name)
@@ -233,6 +238,25 @@ class PosixLibraryLoader(LibraryLoader):
     _include = re.compile(r"^\s*include\s+(?P<pattern>.*)")
 
     name_formats = ["lib%s.so", "%s.so", "%s"]
+
+    class Lookup(LibraryLoader.Lookup):
+
+        def runtime_lib(self, libname):
+            """Try to get the SONAME of the lib."""
+            err_msg = ("Could not extract SONAME of library `%s' (`%s')"
+                       % (libname, self.path))
+            try:
+                output = subprocess.check_output(['objdump', '-p', self.path])
+            except Exception as e:
+                raise RuntimeError("%s: %s" % (err_msg, e))
+
+            result = re.search('^\s+SONAME\s+(.+)$', output, re.MULTILINE)
+            try:
+                soname = result.group(1)
+            except AttributeError:
+                raise RuntimeError("%s: parsing error" % err_msg)
+
+            return soname
 
     class _Directories(dict):
         """Deal with directories"""
