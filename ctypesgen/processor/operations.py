@@ -260,7 +260,9 @@ def fix_conflicting_names(data, opts):
 
 def find_source_libraries(data, opts):
     """find_source_libraries() determines which library contains each function
-    and variable."""
+    and variable and specifies the correct runtime library dependencies."""
+    # NOTE: Hijack options to add the runtime library dependencies
+    opts.runtime_libraries = []
 
     all_symbols = data.functions + data.variables
 
@@ -273,13 +275,17 @@ def find_source_libraries(data, opts):
         try:
             library = libraryloader.load_library(library_name)
         except ImportError as e:
+            # FIXME: We should consider change this to an error.
             warning_message(
                 'Could not load library "%s". Okay, I\'ll '
                 "try to load it at runtime instead. " % (library_name),
                 cls="missing-library",
             )
-            continue
-        for symbol in all_symbols:
-            if symbol.source_library == None:
-                if hasattr(library, symbol.c_name()):
-                    symbol.source_library = library_name
+            opts.runtime_libraries.append(library_name)
+        else:
+            runtime_library = library.runtime_lib(library_name)
+            opts.runtime_libraries.append(runtime_library)
+            for symbol in all_symbols:
+                if symbol.source_library is None:
+                    if hasattr(library, symbol.c_name()):
+                        symbol.source_library = runtime_library

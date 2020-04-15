@@ -35,7 +35,7 @@ Load libraries - appropriately for all our supported platforms
 # POSSIBILITY OF SUCH DAMAGE.
 # ----------------------------------------------------------------------------
 
-import os.path, re, sys, glob
+import os.path, re, sys, glob, subprocess
 import platform
 import ctypes
 import ctypes.util
@@ -70,6 +70,7 @@ class LibraryLoader:
 
         def __init__(self, path, use_errno):
             super(LibraryLoader.Lookup, self).__init__()
+            self.path = path
             self.access = dict(cdecl=ctypes.CDLL(path, self.mode,
                                                  use_errno=use_errno))
 
@@ -88,6 +89,9 @@ class LibraryLoader:
             if calling_convention not in self.access:
                 return False
             return hasattr(self.access[calling_convention], name)
+
+        def runtime_lib(self, libname):
+            return libname
 
         def __getattr__(self, name):
             return getattr(self.access["cdecl"], name)

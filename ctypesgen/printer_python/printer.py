@@ -38,7 +38,7 @@ class WrapperPrinter:
         self.print_loader()
         self.file.write("\n")
 
-        self.print_group(self.options.libraries, "libraries", self.print_library)
+        self.print_group(self.options.runtime_libraries, "libraries", self.print_library)
         self.print_group(self.options.modules, "modules", self.print_module)
 
         method_table = {
