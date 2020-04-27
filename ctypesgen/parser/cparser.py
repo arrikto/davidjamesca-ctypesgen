@@ -149,15 +149,6 @@ class CParser(object):
         """
         sys.stderr.write("{}\n".format(message))
 
-    def handle_define(self, name, params, value, filename, lineno):
-        """#define `name` `value`
-        or #define `name`(`params`) `value`
-
-        name is a string
-        params is None or a list of strings
-        value is a ...?
-        """
-
     def handle_define_constant(self, name, value, filename, lineno):
         """#define `name` `value`
 
@@ -171,6 +162,14 @@ class CParser(object):
         name is a string
         params is a list of strings
         value is an ExpressionNode or None
+        """
+
+    def handle_define_uparseable(self, name, params, value, filename, lineno):
+        """#define followed by an illegal string
+
+        name is a string
+        params is a list of strings
+        value is list of strings
         """
 
     def handle_undefine(self, name, filename, lineno):
@@ -202,23 +201,24 @@ class CParser(object):
         """
         pass
 
+    def get_ctypes_type(self, typ, declarator):
+        """Determine the ctypes type from a C type.
+
+        `typ' is a Type object representing the C type
+        `declarator' is a Declarator object representing a C declaration
+        """
+
 
 class DebugCParser(CParser):
     """A convenience class that prints each invocation of a handle_* method to
     stdout.
     """
 
-    def handle_define(self, name, value, filename, lineno):
-        print("#define name=%r, value=%r" % (name, value))
-
     def handle_define_constant(self, name, value, filename, lineno):
         print("#define constant name=%r, value=%r" % (name, value))
 
-    def handle_declaration(self, declaration, filename, lineno):
-        print(declaration)
-
-    def get_ctypes_type(self, typ, declarator):
-        return typ
+    def handle_define_macro(self, name, params, value, filename, lineno):
+        print("#define name=%r, params=%r, value=%r" % (name, params, value))
 
     def handle_define_unparseable(self, name, params, value, filename, lineno):
         if params:
@@ -226,6 +226,15 @@ class DebugCParser(CParser):
         else:
             original_string = "#define %s %s" % (name, " ".join(value))
         print(original_string)
+
+    def handle_undefine(self, name, filename, lineno):
+        print("#undefine name=%r" % name)
+
+    def handle_declaration(self, declaration, filename, lineno):
+        print(declaration)
+
+    def get_ctypes_type(self, typ, declarator):
+        return typ
 
 
 if __name__ == "__main__":
