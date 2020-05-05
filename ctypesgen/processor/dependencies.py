@@ -121,7 +121,10 @@ def find_dependencies(data, opts):
                 macro_desc = None
                 if ident == desc.macro.name:
                     macro_desc = co_depend(desc, ident_names, ident)
-                if macro_desc is None or not isinstance(macro_desc, MacroDescription):
+                if ((isinstance(macro_desc, ConstantDescription) and macro_desc.name == "NULL") or
+                        isinstance(macro_desc, MacroDescription)):
+                    del ident_names[ident]
+                else:
                     unresolvables.append('identifier "%s"' % ident)
 
             elif not depend(desc, ident_names, ident):
