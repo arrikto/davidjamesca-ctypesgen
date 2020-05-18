@@ -119,7 +119,8 @@ class TypedefDescription(Description):
 class StructDescription(Description):
     """Simple container class for a structure or union definition."""
 
-    def __init__(self, tag, attrib, variety, members, opaque, ctype, src=None):
+    def __init__(self, tag, attrib, variety, members, opaque, ctype, src=None,
+                 file_hash=None):
         super(StructDescription, self).__init__(src)
         # The name of the structure minus the "struct" or "union"
         self.tag = tag
@@ -132,6 +133,8 @@ class StructDescription(Description):
         self.opaque = opaque
         # The original CtypeStruct that created the struct
         self.ctype = ctype
+        # The hash of the file where the struct is defined
+        self.file_hash = file_hash
 
     def casual_name(self):
         return '%s "%s"' % (self.variety.capitalize(), self.tag)
