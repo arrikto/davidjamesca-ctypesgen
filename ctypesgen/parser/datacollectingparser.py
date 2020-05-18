@@ -6,6 +6,8 @@ calling DataCollectingParser.data().
 """
 
 import os
+import io
+import hashlib
 
 from tempfile import mkstemp
 
@@ -67,6 +69,9 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
         self.already_seen_enums = set()
         # A dict of enums that have only been seen in opaque form
         self.already_seen_opaque_enums = {}
+
+        # Hashes of included files
+        self.file_hashes = {}
 
     def parse(self):
         fd, fname = mkstemp(suffix=".h")
@@ -189,6 +194,13 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
             for (membername, ctype) in ctypestruct.members:
                 ctype.visit(self)
 
+            file_hash = self.file_hashes.get(filename)
+            if not file_hash:
+                with io.open(filename, "r", encoding="utf-8") as f:
+                    data = f.read()
+                file_hash = hashlib.sha256(data.encode("utf-8")).hexdigest()
+                self.file_hashes[filename] = file_hash
+
             if name in self.already_seen_opaque_structs:
                 # Fill in older version
                 struct = self.already_seen_opaque_structs[name]
@@ -196,6 +208,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
                 struct.members = ctypestruct.members
                 struct.ctype = ctypestruct
                 struct.src = ctypestruct.src
+                struct.file_hash = file_hash
 
                 self.output_order.append(("struct-body", struct))
 
@@ -210,6 +223,7 @@ class DataCollectingParser(ctypesparser.CtypesParser, CtypesTypeVisitor):
                     False,  # Not opaque
                     src=(filename, str(lineno)),
                     ctype=ctypestruct,
+                    file_hash=file_hash,
                 )
                 self.structs.append(struct)
                 self.all.append(struct)

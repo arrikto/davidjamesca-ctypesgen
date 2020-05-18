@@ -286,6 +286,10 @@ class WrapperPrinter:
                 self.file.write("    ('%s', %s),\n" % (name, ctype.py_string()))
         self.file.write("]\n")
 
+        if struct.file_hash:
+            self.file.write("%s_%s._file_hash_ = \"%s\"\n"
+                            % (struct.variety, struct.tag, struct.file_hash))
+
     def print_enum(self, enum):
         self.file.write("enum_%s = c_int" % enum.tag)
         self.srcinfo(enum.src)
