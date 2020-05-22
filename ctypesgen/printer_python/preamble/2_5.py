@@ -21,22 +21,101 @@ class c_void(Structure):
     _fields_ = [("dummy", c_int)]
 
 
-def POINTER(obj):
-    p = ctypes.POINTER(obj)
+# Define the class of the objects returned by ctypes.byref()
+CArgObject = type(ctypes.byref(c_void_p()))
 
-    # Convert None to a real NULL pointer to work around bugs
-    # in how ctypes handles None on 64-bit platforms
-    if not isinstance(p.from_param, classmethod):
 
-        def from_param(cls, x):
-            if x is None:
-                return cls()
-            else:
+class CTypeError(TypeError):
+
+    def __init__(self, expected_cls, provided_cls):
+        error_msg = ("expected %s instance instead of %s"
+                     % (expected_cls, provided_cls))
+        super(CTypeError, self).__init__(error_msg)
+
+
+def issubclass_ext(sub_cls, base_cls):
+    return (issubclass(sub_cls, base_cls)
+                or (hasattr(base_cls, "_has_subclass_by_ext")
+                    and base_cls._has_subclass_by_ext(sub_cls)))
+
+
+def POINTER(ptr_type):
+    def _has_subclass_by_ext(cls, sub_cls):
+        if issubclass(sub_cls, ctypes._Pointer):
+            return issubclass_ext(sub_cls._type_, cls._type_)
+        return False
+
+    def from_param(cls, x):
+        if x is None:
+        # Convert None to a real NULL pointer to work around bugs
+        # in how ctypes handles None on 64-bit platforms
+            return cls()
+
+        x_cls = type(x)
+        target_cls = cls._type_
+
+        if issubclass_ext(x_cls, target_cls):
+            return ctypes.byref(x)
+
+        if isinstance(x, ctypes._Pointer) or isinstance(x, ctypes.Array):
+            x_target_cls = x._type_
+            if issubclass_ext(x_target_cls, target_cls):
                 return x
 
-        p.from_param = classmethod(from_param)
+        while True:
+            if issubclass_ext(x_cls, cls):
+                return x
 
+            if x_cls == CArgObject:
+                x_target_cls = type(x._obj)
+                x_cls_name = "pointer to %s" % x_target_cls.__name__
+                if issubclass_ext(x_target_cls, target_cls):
+                    return x
+                else:
+                    raise CTypeError(cls.__name__, x_cls_name)
+
+            if not hasattr(x, "_as_parameter_") or x._as_parameter_ is None:
+                break
+            x = x._as_parameter_
+            x_cls = type(x)
+
+        raise CTypeError(cls.__name__, x_cls.__name__)
+
+
+    p = ctypes.POINTER(ptr_type)
+    # Do not override from_param() for POINTER(None) (i.e. c_void_p) types
+    if ptr_type is not None:
+        p.from_param = classmethod(from_param)
+        p._has_subclass_by_ext = classmethod(_has_subclass_by_ext)
     return p
+
+
+class Structure(ctypes.Structure):
+
+    @classmethod
+    def _has_subclass_by_ext(cls, sub_cls):
+        # Check if object's class originates from the same sturct in a
+        # different module (check for same name and same _file_hash_ to ensure
+        # that the object's class and parameter class originate from the same
+        # file). Check for the object's class and all of its parent classes.
+        # NOTE: No need to check the _fields_, because in C we cannot have the
+        # same name defined twice in the same file.
+        base_classes = inspect.getmro(sub_cls)
+        for _cls in base_classes:
+            if (issubclass(_cls, ctypes.Structure)
+                    and cls.__name__ == _cls.__name__
+                    and hasattr(cls, "_file_hash_")
+                    and hasattr(_cls, "_file_hash_")
+                    and cls._file_hash_ == _cls._file_hash_):
+                return True
+        return False
+
+    @classmethod
+    def from_param(cls, obj):
+        if issubclass_ext(type(obj), cls):
+            return obj
+        else:
+            raise CTypeError(cls.__name__, obj.__class__.__name__)
 
 
 class UserString:
