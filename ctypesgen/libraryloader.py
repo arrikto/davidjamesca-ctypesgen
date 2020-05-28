@@ -246,11 +246,12 @@ class PosixLibraryLoader(LibraryLoader):
             err_msg = ("Could not extract SONAME of library `%s' (`%s')"
                        % (libname, self.path))
             try:
-                output = subprocess.check_output(['objdump', '-p', self.path])
+                output = subprocess.check_output(["objdump", "-p", self.path])
+                output = output.decode("utf-8")
             except Exception as e:
                 raise RuntimeError("%s: %s" % (err_msg, e))
 
-            result = re.search('^\s+SONAME\s+(.+)$', output, re.MULTILINE)
+            result = re.search("^\s+SONAME\s+(.+)$", output, re.MULTILINE)
             try:
                 soname = result.group(1)
             except AttributeError:
