@@ -193,6 +193,32 @@ class PosixLibraryLoader(LibraryLoader):
 
     _include = re.compile(r"^\s*include\s+(?P<pattern>.*)")
 
+    name_formats = [
+        "lib%s.so",
+        "%s.so",
+        "%s"
+    ]
+
+    class Lookup(LibraryLoader.Lookup):
+
+        def runtime_lib(self, libname):
+            """Try to get the SONAME of the lib."""
+            err_msg = ("Could not extract SONAME of library `%s' (`%s')"
+                       % (libname, self.path))
+            try:
+                output = subprocess.check_output(["objdump", "-p", self.path])
+                output = output.decode("utf-8")
+            except Exception as e:
+                raise RuntimeError("%s: %s" % (err_msg, e))
+
+            result = re.search("^\s+SONAME\s+(.+)$", output, re.MULTILINE)
+            try:
+                soname = result.group(1)
+            except AttributeError:
+                raise RuntimeError("%s: parsing error" % err_msg)
+
+            return soname
+
     class _Directories(dict):
         def __init__(self):
             self.order = 0
