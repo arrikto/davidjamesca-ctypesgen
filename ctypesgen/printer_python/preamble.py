@@ -3,17 +3,18 @@ from ctypes import *
 
 _int_types = (c_int16, c_int32)
 if hasattr(ctypes, "c_int64"):
-    # Some builds of ctypes apparently do not have c_int64
+    # Some builds of ctypes apparently do not have ctypes.c_int64
     # defined; it's a pretty good bet that these builds do not
     # have 64-bit pointers.
-    _int_types += (c_int64,)
+    _int_types += (ctypes.c_int64,)
 for t in _int_types:
-    if sizeof(t) == sizeof(c_size_t):
+    if ctypes.sizeof(t) == ctypes.sizeof(ctypes.c_size_t):
         c_ptrdiff_t = t
 del t
 del _int_types
 
 
+# ~POINTER~
 class UserString:
     def __init__(self, seq):
         if isinstance(seq, bytes):
@@ -46,12 +47,6 @@ class UserString:
 
     def __hash__(self):
         return hash(self.data)
-
-    def __cmp__(self, string):
-        if isinstance(string, UserString):
-            return cmp(self.data, string.data)
-        else:
-            return cmp(self.data, string)
 
     def __le__(self, string):
         if isinstance(string, UserString):
@@ -324,9 +319,9 @@ class MutableString(UserString):
         return self
 
 
-class String(MutableString, Union):
+class String(MutableString, ctypes.Union):
 
-    _fields_ = [("raw", POINTER(c_char)), ("data", c_char_p)]
+    _fields_ = [("raw", ctypes.POINTER(ctypes.c_char)), ("data", ctypes.c_char_p)]
 
     def __init__(self, obj=b""):
         if isinstance(obj, (bytes, UserString)):
@@ -340,7 +335,7 @@ class String(MutableString, Union):
     def from_param(cls, obj):
         # Convert None or 0
         if obj is None or obj == 0:
-            return cls(POINTER(c_char)())
+            return cls(ctypes.POINTER(ctypes.c_char)())
 
         # Convert from String
         elif isinstance(obj, String):
@@ -355,19 +350,19 @@ class String(MutableString, Union):
             return cls(obj.encode())
 
         # Convert from c_char_p
-        elif isinstance(obj, c_char_p):
+        elif isinstance(obj, ctypes.c_char_p):
             return obj
 
-        # Convert from POINTER(c_char)
-        elif isinstance(obj, POINTER(c_char)):
+        # Convert from POINTER(ctypes.c_char)
+        elif isinstance(obj, ctypes.POINTER(ctypes.c_char)):
             return obj
 
         # Convert from raw pointer
         elif isinstance(obj, int):
-            return cls(cast(obj, POINTER(c_char)))
+            return cls(ctypes.cast(obj, ctypes.POINTER(ctypes.c_char)))
 
-        # Convert from c_char array
-        elif isinstance(obj, c_char * len(obj)):
+        # Convert from ctypes.c_char array
+        elif isinstance(obj, ctypes.c_char * len(obj)):
             return obj
 
         # Convert from object
@@ -387,12 +382,12 @@ def ReturnString(obj, func=None, arguments=None):
 # primitive datatypes.
 #
 # Non-primitive return values wrapped with UNCHECKED won't be
-# typechecked, and will be converted to c_void_p.
+# typechecked, and will be converted to ctypes.c_void_p.
 def UNCHECKED(type):
     if hasattr(type, "_type_") and isinstance(type._type_, str) and type._type_ != "P":
         return type
     else:
-        return c_void_p
+        return ctypes.c_void_p
 
 
 # ctypes doesn't have direct support for variadic functions, so we have to write
