@@ -3,7 +3,7 @@ The dependencies module determines which descriptions depend on which other
 descriptions.
 """
 
-from ctypesgen.descriptions import MacroDescription, UndefDescription
+from ctypesgen.descriptions import ConstantDescription, MacroDescription, UndefDescription
 from ctypesgen.ctypedescs import visit_type_and_collect_info
 
 
