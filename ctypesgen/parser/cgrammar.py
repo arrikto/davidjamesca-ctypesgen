@@ -63,6 +63,7 @@ extra_keywords_with_alias = {
     "__restrict": "RESTRICT",
     "__inline__": "INLINE",
     "__inline": "INLINE",
+    "__volatile__": "VOLATILE",
 }
 
 keyword_map = {}
