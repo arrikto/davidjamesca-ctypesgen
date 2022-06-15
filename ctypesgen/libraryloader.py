@@ -61,7 +61,7 @@ class LibraryLoader:
     # library names formatted specifically for platforms
     name_formats = ["%s"]
 
-    class Lookup:
+    class Lookup(object):
         """Looking up calling conventions for a platform"""
 
         mode = ctypes.DEFAULT_MODE

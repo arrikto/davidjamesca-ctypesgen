@@ -153,7 +153,7 @@ class WrapperPrinter:
             )
             return
 
-        c_preamblefile = f"{dst}/ctypes_preamble.py"
+        c_preamblefile = "%s/ctypes_preamble.py" % dst
         if os.path.isfile(c_preamblefile):
             return
 
@@ -183,8 +183,8 @@ class WrapperPrinter:
         with open(c_preamblefile, "w") as f:
             f.write(filecontent)
 
-        shutil.copy(LIBRARYLOADER_PATH, f"{dst}")
-        os.rename(f"{dst}/libraryloader.py", f"{dst}/ctypes_loader.py")
+        shutil.copy(LIBRARYLOADER_PATH, "%s" % dst)
+        os.rename("%s/libraryloader.py" % dst, "%s/ctypes_loader.py" % dst)
 
     def print_loader(self):
         self.file.write("_libs = {}\n")
